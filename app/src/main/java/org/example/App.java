@@ -3,12 +3,29 @@
  */
 package org.example;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class App {
     public String getGreeting() {
         return "Hello World!";
     }
 
+    public List<String> someFruits() {
+        var list = List.of("apple", "banana", "cherry", "avocado");
+
+        var aFruits = list.stream()
+            .filter(s -> s.startsWith("a"))
+            .collect(Collectors.toList());
+
+        System.out.println(aFruits);
+
+        return aFruits;
+    }
+
     public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+        App app = new App();
+        System.out.println(app.getGreeting());
+        System.out.println(app.someFruits());
     }
 }
