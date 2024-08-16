@@ -3,10 +3,86 @@
  */
 package org.example;
 
+import org.example.App.Token.LiteralString;
+import org.example.App.Token.Parameter;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/*
+Implement a function that replaces any strings of the form ${blah} inside a
+larger string with a value looked up by calling findParameter(String blah) on
+the ParameterService.
+
+You may not use regex, String.replace*, String.split or similar functions in
+other libraries, but a O(n^2) solution is fine.
+ */
 public class App {
+
+    public interface ParameterService {
+        String findParameter(String key);
+    }
+
+    public sealed interface Token {
+        record Parameter(String name)  implements Token {}
+        record LiteralString(String s) implements Token {}
+    }
+
+    public List<Token> parseTemplate(String template) {
+        final List<Token> results = new ArrayList<>();
+        int index = 0;
+        StringBuilder literal = new StringBuilder();
+        while (index < template.length()) {
+            // Parse parameter
+            int startIndex = index;
+            if (template.substring(index).startsWith("${")) {
+                index += 2; // skip "{"
+                StringBuilder parameter = new StringBuilder();
+                while (index < template.length() && Character.isAlphabetic(template.charAt(index))) {
+                    parameter.append(template.charAt(index));
+                    ++index;
+                }
+                if (!parameter.isEmpty() && index < template.length() && template.charAt(index) == '}') {
+                    ++index; // Skip over '}'
+                    if (!literal.isEmpty()) {
+                        results.add(new LiteralString(literal.toString()));
+                        literal = new StringBuilder();
+                    }
+                    var token = new Parameter(parameter.toString());
+                    results.add(token);
+                } else {
+                    // Not actually a parameter, so accumulate in "ambient" literal.
+                    literal.append(template, startIndex, index);
+                }
+            } else {
+                // Not starting a parameter, so accumulate character into "ambient" literal.
+                literal.append(template.charAt(index));
+                ++index;
+            }
+        }
+        if (!literal.isEmpty()) {
+            results.add(new LiteralString(literal.toString()));
+        }
+        return results;
+    }
+
+    public String replace(String template, ParameterService parameters) {
+        var tokens = parseTemplate(template);
+        StringBuilder result = new StringBuilder();
+        for (Token t : tokens) {
+            switch (t) {
+                case LiteralString literalString -> {
+                    result.append(literalString.s());
+                }
+                case Parameter parameter -> {
+                    result.append(parameters.findParameter(parameter.name()));
+                }
+            }
+        }
+        return result.toString();
+    }
+
     public String getGreeting() {
         return "Hello World!";
     }

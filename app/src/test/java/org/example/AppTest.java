@@ -3,6 +3,8 @@
  */
 package org.example;
 
+import org.example.App.Token.LiteralString;
+import org.example.App.Token.Parameter;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -10,13 +12,95 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AppTest {
-    @Test void appHasAGreeting() {
+    @Test
+    void appHasAGreeting() {
         var app = new App();
         assertNotNull(app.getGreeting(), "app should have a greeting");
     }
 
-    @Test void hasSomeFruits() {
+    @Test
+    void hasSomeFruits() {
         var app = new App();
         assertEquals(List.of("apple", "avocado"), app.someFruits());
     }
+
+    @Test
+    void testParseTemplate() {
+        var app = new App();
+
+        assertEquals(List.of(), app.parseTemplate(""));
+        assertEquals(List.of(new LiteralString("a")), app.parseTemplate("a"));
+        assertEquals(List.of(new LiteralString("$")), app.parseTemplate("$"));
+        assertEquals(List.of(new LiteralString("${")), app.parseTemplate("${"));
+        assertEquals(List.of(new LiteralString("${}")), app.parseTemplate("${}"));
+        assertEquals(List.of(new Parameter("a")), app.parseTemplate("${a}"));
+        assertEquals(List.of(
+                new LiteralString(" "),
+                new Parameter("a")
+            ),
+            app.parseTemplate(" ${a}")
+        );
+        assertEquals(List.of(
+                new LiteralString("Hello "),
+                new Parameter("name"),
+                new LiteralString("!")
+            ), app.parseTemplate("Hello ${name}!")
+        );
+        // Nested. Here only ${foo} is recognised as a parameter.
+        assertEquals(List.of(
+                new LiteralString("Hello ${na"),
+                new Parameter("foo"),
+                new LiteralString("me}!")
+            ), app.parseTemplate("Hello ${na${foo}me}!")
+        );
+    }
+
+    @Test
+    void testReplace() {
+        var app = new App();
+        var parameters = new App.ParameterService() {
+            @Override
+            public String findParameter(String key) {
+                if (key.equals("name")) {
+                    return "Steve";
+                } else {
+                    // Let's just presume that all other parameters are empty rather than throwing.
+                    return "";
+                }
+            }
+        };
+
+        assertEquals("", app.replace("", parameters));
+        assertEquals("a", app.replace("a", parameters));
+        assertEquals("ab", app.replace("ab", parameters));
+        assertEquals("abc", app.replace("abc", parameters));
+        assertEquals("Just a big literal string", app.replace("Just a big literal string", parameters));
+
+        assertEquals("Steve", app.replace("${name}", parameters));
+        assertEquals("aSteve", app.replace("a${name}", parameters));
+        assertEquals("aStevea", app.replace("a${name}a", parameters));
+
+        assertEquals("Hello Steve!", app.replace("Hello ${name}!", parameters));
+    }
+
+    @Test
+    void testReplace2() {
+        var app = new App();
+        var parameters = new App.ParameterService() {
+            @Override
+            public String findParameter(String key) {
+                if (key.equals("foo")) {
+                    return "Foo";
+                } else if (key.equals("bar")) {
+                    return "Bar";
+                } else {
+                    // Let's just presume that all other parameters are empty rather than throwing.
+                    return "";
+                }
+            }
+        };
+        var s = app.replace("Hi ${foo} and ${bar}", parameters);
+        assertEquals("Hello Steve!", s);
+    }
+
 }
