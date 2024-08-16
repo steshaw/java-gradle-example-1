@@ -100,7 +100,7 @@ class AppTest {
             }
         };
         var s = app.replace("Hi ${foo} and ${bar}", parameters);
-        assertEquals("Hello Steve!", s);
+        assertEquals("Hi Foo and Bar", s);
     }
 
 }
