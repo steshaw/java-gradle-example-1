@@ -25,8 +25,11 @@ public class App {
     }
 
     public sealed interface Token {
-        record Parameter(String name)  implements Token {}
-        record LiteralString(String s) implements Token {}
+        record Parameter(String name) implements Token {
+        }
+
+        record LiteralString(String s) implements Token {
+        }
     }
 
     public List<Token> parseTemplate(String template) {
@@ -68,8 +71,8 @@ public class App {
     }
 
     public String replace(String template, ParameterService parameters) {
-        var tokens = parseTemplate(template);
-        StringBuilder result = new StringBuilder();
+        final var tokens = parseTemplate(template);
+        final var result = new StringBuilder();
         for (Token t : tokens) {
             switch (t) {
                 case LiteralString literalString -> {
@@ -99,9 +102,27 @@ public class App {
         return aFruits;
     }
 
+    record Language(String name, int year) {
+    }
+
+    public List<String> languageNames() {
+        var list = List.of(
+            new Language("Java", 1995),
+            new Language("Haskell", 1990),
+            new Language("Rust", 2015)
+        );
+
+        var result = list.stream()
+            .map(l -> l.name)
+            .collect(Collectors.toList());
+        System.out.println(result);
+        return result;
+    }
+
     public static void main(String[] args) {
         App app = new App();
         System.out.println(app.getGreeting());
         System.out.println(app.someFruits());
+        System.out.println(app.languageNames());
     }
 }
